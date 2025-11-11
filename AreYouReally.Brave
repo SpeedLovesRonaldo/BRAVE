@@ -1,0 +1,144 @@
+import { useState, useEffect } from "react";
+import { Quiz } from "@/components/Quiz";
+import { Results } from "@/components/Results";
+import { WalletConnect } from "@/components/WalletConnect";
+import { Footer } from "@/components/Footer";
+import { parseResultFromHash } from "@/lib/quiz-utils";
+
+const Index = () => {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState<number[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  useEffect(() => {
+    // Check if there's a shared result in the URL
+    const sharedResult = parseResultFromHash(window.location.hash);
+    if (sharedResult) {
+      setAnswers(sharedResult.answers);
+      setShowResults(true);
+    }
+  }, []);
+
+  const handleAnswer = (score: number) => {
+    const newAnswers = [...answers, score];
+    setAnswers(newAnswers);
+
+    if (currentQuestion < 9) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      setShowResults(true);
+    }
+  };
+
+  const handleReset = () => {
+    setCurrentQuestion(0);
+    setAnswers([]);
+    setShowResults(false);
+    window.location.hash = "";
+  };
+
+  const handleConnectWallet = async () => {
+    setIsConnecting(true);
+    try {
+      if (typeof window.ethereum !== "undefined") {
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        if (accounts.length > 0) {
+          setWalletAddress(accounts[0]);
+        }
+      } else {
+        alert(
+          "No Ethereum wallet detected. Please install Brave Wallet or MetaMask."
+        );
+      }
+    } catch (error) {
+      console.error("Failed to connect wallet:", error);
+      alert("Failed to connect wallet. Please try again.");
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const totalScore = answers.reduce((sum, score) => sum + score, 0);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-brave-navy via-brave-midnight to-brave-navy relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-float" style={{ animationDelay: "1s" }} />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8 md:py-16">
+        <div className="max-w-[900px] mx-auto">
+          {/* Header */}
+          <header className="text-center mb-12 animate-slide-up">
+            <h1 className="mb-4 bg-gradient-to-r from-foreground to-accent bg-clip-text text-transparent">
+              Are You Really Brave?
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Face 10 life scenarios testing emotional bravery, financial risk, social courage, moral strength, and privacy awareness. 
+              Discover who you really are. Connect Brave Wallet to mint your demo badge.
+            </p>
+          </header>
+
+          {/* Wallet Connection */}
+          <div className="mb-8">
+            <WalletConnect
+              walletAddress={walletAddress}
+              isConnecting={isConnecting}
+              onConnect={handleConnectWallet}
+            />
+          </div>
+
+          {/* Main Card */}
+          <div
+            className="bg-card rounded-2xl p-6 md:p-8 animate-slide-up"
+            style={{
+              boxShadow: "var(--shadow-card)",
+              animationDelay: "0.1s",
+            }}
+          >
+            {!showResults ? (
+              <Quiz
+                currentQuestion={currentQuestion}
+                onAnswer={handleAnswer}
+              />
+            ) : (
+              <Results
+                score={totalScore}
+                answers={answers}
+                walletAddress={walletAddress}
+                onReset={handleReset}
+              />
+            )}
+          </div>
+
+          {/* About Section */}
+          <div
+            className="mt-12 text-center animate-slide-up"
+            style={{ animationDelay: "0.2s" }}
+          >
+            <h2 className="text-xl font-semibold mb-4">
+              How This Uses .brave
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              This site is hosted on IPFS and uses domain resolution via the
+              .brave Polygon naming system. Connect your Brave Wallet to
+              experience seamless Web3 identity and interactions. Results are
+              stored on-chain for transparent, decentralized verification.
+            </p>
+          </div>
+
+          {/* Footer */}
+          <Footer />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Index;
