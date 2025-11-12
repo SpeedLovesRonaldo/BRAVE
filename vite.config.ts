@@ -37,7 +37,5 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
-});
   base: './',
-  // (keep the rest of your config)
-})
+});
