@@ -4,7 +4,7 @@ import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
-  base: "./", // ✅ This is the key change for IPFS compatibility!
+  base: "./", // ✅ Required for IPFS & local `file://` paths
   plugins: [
     react(),
     runtimeErrorOverlay(),
